@@ -1,0 +1,15 @@
+{
+  "gas_url": "",
+  "delay_preset": "custom",
+  "delay_custom_min": 40,
+  "delay_custom_max": 120,
+  "human_like_typing": true,
+  "burst_length_min": 3,
+  "burst_length_max": 10,
+  "long_pause_freq": 50,
+  "long_pause_min": 500,
+  "long_pause_max": 1500,
+  "error_rate": 2,
+  "correction_rate": 80,
+  "typo_rate": 3
+}

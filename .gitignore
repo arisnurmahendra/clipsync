@@ -1,0 +1,37 @@
+# Binaries
+*.bat
+*.exe
+*.syso
+*.7z
+*.zip
+*.tar.gz
+
+# Logs
+*.log
+
+# Build artifacts
+build/
+dist/
+output/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+desktop.ini
+
+# Config (if needed - though we want to keep config.json as template)
+# config.json
+task-list.png
+clipboard_9785024.png
+noted.md
+
+# Local config overrides
+local_config.json
