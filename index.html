@@ -1,0 +1,185 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Clipboard Relay</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: sans-serif;
+      background: #f0f2f5;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 24px 16px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    }
+
+    h3 {
+      font-size: 18px;
+      margin-bottom: 16px;
+      color: #1a1a1a;
+    }
+
+    textarea {
+      width: 100%;
+      height: 140px;
+      font-size: 15px;
+      padding: 10px 12px;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+      line-height: 1.5;
+    }
+
+    textarea:focus { border-color: #4a90e2; }
+
+    .char-count {
+      text-align: right;
+      font-size: 12px;
+      color: #999;
+      margin-top: 4px;
+      margin-bottom: 12px;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      flex: 1;
+      padding: 12px;
+      font-size: 15px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: opacity 0.2s, background 0.2s;
+    }
+
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    #btnSend  { background: #4a90e2; color: #fff; }
+    #btnClear { background: #f0f2f5; color: #555; }
+
+    .status {
+      margin-top: 14px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      display: none;
+    }
+
+    .status.success { background: #e6f4ea; color: #2d7a3a; display: block; }
+    .status.error   { background: #fdecea; color: #c0392b; display: block; }
+    .status.loading { background: #e8f0fe; color: #3367d6; display: block; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h3>📋 Clipboard Relay</h3>
+  <textarea id="txt" placeholder="Ketik teks di sini..."></textarea>
+  <div class="char-count"><span id="charCount">0</span> karakter</div>
+  <div class="btn-row">
+    <button id="btnSend" onclick="send()">Kirim</button>
+    <button id="btnClear" onclick="clearRemote()">Hapus</button>
+  </div>
+  <div id="status" class="status"></div>
+</div>
+
+<script>
+  const txt       = document.getElementById('txt');
+  const charCount = document.getElementById('charCount');
+  const status    = document.getElementById('status');
+  const btnSend   = document.getElementById('btnSend');
+  const btnClear  = document.getElementById('btnClear');
+
+  // ── Live char count ──────────────────────────────────────────
+  txt.addEventListener('input', () => {
+    charCount.textContent = txt.value.length;
+  });
+
+  // ── Helper UI ────────────────────────────────────────────────
+  function setStatus(msg, type) {
+    status.textContent = msg;
+    status.className   = 'status ' + type;
+    if (type !== 'loading') {
+      setTimeout(() => { status.className = 'status'; }, 3000);
+    }
+  }
+
+  function setLoading(state) {
+    btnSend.disabled  = state;
+    btnClear.disabled = state;
+    if (state) setStatus('Mengirim...', 'loading');
+  }
+
+  // ── Kirim teks ───────────────────────────────────────────────
+  function send() {
+    const text = txt.value;
+    if (text.trim() === '') {
+      setStatus('Teks tidak boleh kosong.', 'error');
+      return;
+    }
+
+    setLoading(true);
+    google.script.run
+      .withSuccessHandler(function(res) {
+        setLoading(false);
+        if (res.ok) {
+          setStatus('✅ Terkirim! (' + res.stored.length + ' karakter)', 'success');
+          txt.value = '';
+          charCount.textContent = '0';
+        } else {
+          setStatus('❌ ' + (res.error || 'Gagal menyimpan.'), 'error');
+        }
+      })
+      .withFailureHandler(function(err) {
+        setLoading(false);
+        setStatus('❌ Error: ' + err.message, 'error');
+      })
+      .storeClip(text);
+  }
+
+  // ── Hapus data di GAS ────────────────────────────────────────
+  function clearRemote() {
+    setLoading(true);
+    google.script.run
+      .withSuccessHandler(function() {
+        setLoading(false);
+        setStatus('🗑️ Data di server dihapus.', 'success');
+      })
+      .withFailureHandler(function(err) {
+        setLoading(false);
+        setStatus('❌ Error: ' + err.message, 'error');
+      })
+      .clearClip();
+  }
+
+  // ── Submit dengan Ctrl+Enter ─────────────────────────────────
+  txt.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && e.ctrlKey) {
+      e.preventDefault();
+      send();
+    }
+  });
+</script>
+</body>
+</html>
